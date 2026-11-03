@@ -7,32 +7,64 @@ Plataforma de ventas en línea. Esta entrega cubre la **Fase 1** del Tech Challe
 
 ## Requisitos
 
-- Docker (recomendado): levanta SQL Server 2022 y el backend en **Node 24** sin instalar nada más
-- O bien Node.js 22+ local y SQL Server 2019+ (el código se probó también en Node 22)
+El proyecto corre de dos maneras; elige **una**:
 
-## Puesta en marcha con Docker (Node 24)
+| Opción | Necesitas | Ideal si |
+|---|---|---|
+| **A. Docker** (recomendada) | Docker con Compose | No quieres instalar Node ni SQL Server. Backend en Node 24 y SQL Server 2022 |
+| **B. Sin Docker** | Node.js 22+ (24 LTS recomendado) y SQL Server 2019+ | Ya tienes SQL Server instalado |
+
+## Opción A — Con Docker
 
 ```bash
-cp .env.example .env     # DB_PASSWORD y JWT_SECRET (≥ 32 caracteres)
+cp .env.example .env          # edita DB_PASSWORD y JWT_SECRET (mínimo 32 caracteres)
 docker compose up -d --build
 ```
 
-Espera a que SQL Server esté sano; el contenedor del backend aplica las migraciones y arranca solo. La API queda en `http://localhost:3000/api/health`. Para recrear los datos: `cd backend && npm install && npm run db:reset` y `docker compose restart backend`.
+SQL Server tarda en iniciar; el contenedor del backend espera a que esté sano, aplica las migraciones y arranca solo. Comprueba con `http://localhost:3000/api/health`.
 
-## Puesta en marcha local (sin contenedor para el backend)
+Para volver a crear los datos desde cero:
 
 ```bash
-cp .env.example .env                    # contraseña del SA para docker compose
-cp backend/.env.example backend/.env    # configuración del backend (ajusta DB_PASSWORD para que coincida)
-docker compose up -d                    # SQL Server en localhost:1433
-cd backend
-npm install
-npm run db:migrate                      # crea la base ShopCart, objetos y datos semilla
-npm run dev                             # API en http://localhost:3000
+cd backend && npm install && npm run db:reset && cd ..
+docker compose restart backend
 ```
 
-> En `.env` los valores con `#` deben ir entre comillas (`DB_PASSWORD="Clave#123"`), de lo contrario `dotenv` los trunca.
-> En Apple Silicon la imagen de SQL Server corre con emulación `linux/amd64`; el primer arranque tarda un poco.
+## Opción B — Sin Docker
+
+1. **SQL Server 2019+** (Developer o Express) con:
+   - Autenticación mixta (SQL Server y Windows): el proyecto entra con usuario y contraseña.
+   - TCP/IP habilitado en el puerto 1433.
+   - Un usuario con permiso para crear bases de datos (por ejemplo `sa`).
+2. **Configura el backend**:
+
+   ```bash
+   cd backend
+   cp .env.example .env
+   ```
+
+   Edita `backend/.env`: `DB_SERVER`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` y `JWT_SECRET` (mínimo 32 caracteres). Si usas SQL Server local sin certificado válido deja `DB_ENCRYPT=false` y `DB_TRUST_SERVER_CERTIFICATE=true`.
+3. **Crea la base y arranca**:
+
+   ```bash
+   npm install
+   npm run db:migrate    # crea la base ShopCart, tablas, SPs y datos semilla
+   npm run dev           # API en http://localhost:3000
+   ```
+
+   Para producción: `npm run build && npm start`.
+
+> Los valores con `#` en un `.env` deben ir entre comillas (`DB_PASSWORD="Clave#123"`); si no, `dotenv` los trunca.
+> En Mac con Apple Silicon SQL Server solo corre en Docker (emulación `linux/amd64`, el primer arranque tarda). Sin Docker habría que apuntar a una instancia remota.
+
+**Problemas frecuentes (opción B)**
+
+| Síntoma | Causa |
+|---|---|
+| `Login failed for user` | Contraseña incorrecta, `#` sin comillas o autenticación mixta desactivada |
+| `Failed to connect ... ECONNREFUSED` | TCP/IP deshabilitado o puerto distinto de 1433 (instancias con nombre usan puerto dinámico: fíjalo) |
+| `CREATE DATABASE permission denied` | El usuario no puede crear bases de datos |
+| `Variables de entorno inválidas` | Falta `JWT_SECRET` (≥ 32 caracteres) u otra variable obligatoria en `backend/.env` |
 
 Comandos útiles (desde `backend/`):
 
