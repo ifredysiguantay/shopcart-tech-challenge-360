@@ -23,11 +23,11 @@ docker compose up -d --build
 
 SQL Server tarda en iniciar; el contenedor del backend espera a que esté sano, aplica las migraciones y arranca solo. Comprueba con `http://localhost:3000/api/health`.
 
-Para volver a crear los datos desde cero:
+Para volver a crear los datos desde cero (borra el volumen de la base):
 
 ```bash
-cd backend && npm install && npm run db:reset && cd ..
-docker compose restart backend
+docker compose down -v
+docker compose up -d --build
 ```
 
 ## Opción B — Sin Docker
