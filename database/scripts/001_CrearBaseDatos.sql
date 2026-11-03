@@ -1,0 +1,2 @@
+IF DB_ID(N'ShopCart') IS NULL
+    CREATE DATABASE ShopCart COLLATE Latin1_General_100_CI_AI;
