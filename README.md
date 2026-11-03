@@ -7,10 +7,19 @@ Plataforma de ventas en línea. Esta entrega cubre la **Fase 1** del Tech Challe
 
 ## Requisitos
 
-- Node.js 22 o superior (el enunciado pide 24 LTS; el código no usa nada específico de 24 y se probó en 22.21)
-- Docker (para SQL Server 2022) o una instancia propia de SQL Server 2019+
+- Docker (recomendado): levanta SQL Server 2022 y el backend en **Node 24** sin instalar nada más
+- O bien Node.js 22+ local y SQL Server 2019+ (el código se probó también en Node 22)
 
-## Puesta en marcha
+## Puesta en marcha con Docker (Node 24)
+
+```bash
+cp .env.example .env     # DB_PASSWORD y JWT_SECRET (≥ 32 caracteres)
+docker compose up -d --build
+```
+
+Espera a que SQL Server esté sano; el contenedor del backend aplica las migraciones y arranca solo. La API queda en `http://localhost:3000/api/health`. Para recrear los datos: `cd backend && npm install && npm run db:reset` y `docker compose restart backend`.
+
+## Puesta en marcha local (sin contenedor para el backend)
 
 ```bash
 cp .env.example .env                    # contraseña del SA para docker compose
